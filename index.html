@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Shop</title>
+</head>
+<body>
+  <h1>Mini Shop</h1>
+
+  <h2>Products</h2>
+  <ul id="products"></ul>
+
+  <h2>Cart</h2>
+  <ul id="cart"></ul>
+  <p>Total: $<span id="total">0.00</span></p>
+
+  <script>
+    // 3 products
+    const products = [
+      { id: 1, name: "T-Shirt", price: 19.99 },
+      { id: 2, name: "Coffee Mug", price: 9.99 },
+      { id: 3, name: "Sticker Pack", price: 4.99 }
+    ];
+
+    // cart: { productId: quantity }
+    const cart = {};
+
+    const productsEl = document.getElementById("products");
+    const cartEl = document.getElementById("cart");
+    const totalEl = document.getElementById("total");
+
+    // Render the product list with an "Add to cart" button each
+    products.forEach(p => {
+      const li = document.createElement("li");
+      li.textContent = p.name + " - $" + p.price.toFixed(2) + " ";
+      const btn = document.createElement("button");
+      btn.textContent = "Add to cart";
+      btn.addEventListener("click", () => addToCart(p.id));
+      li.appendChild(btn);
+      productsEl.appendChild(li);
+    });
+
+    function addToCart(id) {
+      cart[id] = (cart[id] || 0) + 1;
+      renderCart();
+    }
+
+    function removeFromCart(id) {
+      if (!cart[id]) return;
+      cart[id]--;
+      if (cart[id] <= 0) delete cart[id];
+      renderCart();
+    }
+
+    function renderCart() {
+      cartEl.innerHTML = "";
+      let total = 0;
+
+      const ids = Object.keys(cart);
+      if (ids.length === 0) {
+        const li = document.createElement("li");
+        li.textContent = "Cart is empty";
+        cartEl.appendChild(li);
+      }
+
+      ids.forEach(id => {
+        const p = products.find(x => x.id === Number(id));
+        const qty = cart[id];
+        total += p.price * qty;
+
+        const li = document.createElement("li");
+        li.textContent = p.name + " x " + qty + " = $" + (p.price * qty).toFixed(2) + " ";
+        const btn = document.createElement("button");
+        btn.textContent = "Remove";
+        btn.addEventListener("click", () => removeFromCart(id));
+        li.appendChild(btn);
+        cartEl.appendChild(li);
+      });
+
+      totalEl.textContent = total.toFixed(2);
+    }
+
+    renderCart();
+  </script>
+</body>
+</html>
