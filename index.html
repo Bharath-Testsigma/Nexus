@@ -4,46 +4,295 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mini Shop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400;1,9..144,600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --paper:#f1e7d2;
+      --surface:#f8f1e1;
+      --ink:#221d15;
+      --ink-soft:#6a5e49;
+      --accent:#e0432b;
+      --accent-2:#1f6f63;
+      --accent-3:#e3a428;
+      --line:rgba(34,29,21,.18);
+    }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html{background:var(--paper);}
+    body{
+      font-family:"Space Mono",monospace;
+      color:var(--ink);
+      background:var(--paper);
+      line-height:1.5;
+      overflow-x:hidden;
+    }
+
+    /* ---- grain overlay ---- */
+    .grain{
+      position:fixed;inset:0;z-index:9999;pointer-events:none;
+      mix-blend-mode:multiply;opacity:.05;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ---- marquee ---- */
+    .marquee{
+      background:var(--accent);color:var(--paper);
+      border-bottom:2px solid var(--ink);
+      overflow:hidden;white-space:nowrap;
+      font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;font-weight:700;
+    }
+    .marquee span{display:inline-block;padding:.5rem 0;animation:scroll 22s linear infinite;}
+    .marquee span b{padding:0 1.4rem;}
+    @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+    /* ---- topbar ---- */
+    .topbar{
+      position:sticky;top:0;z-index:50;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.85rem 1.4rem;
+      background:var(--paper);border-bottom:1.5px solid var(--ink);
+    }
+    .brand{font-family:"Fraunces",serif;font-weight:900;font-size:1.35rem;letter-spacing:-.01em;}
+    .brand em{font-style:italic;color:var(--accent);}
+    .cart-pill{
+      display:inline-flex;align-items:center;gap:.5rem;
+      font-size:.72rem;text-transform:uppercase;letter-spacing:.16em;
+      border:1.5px solid var(--ink);border-radius:999px;padding:.35rem .8rem;
+    }
+    .cart-pill .count{
+      background:var(--ink);color:var(--paper);border-radius:999px;
+      min-width:1.4rem;text-align:center;padding:.05rem .35rem;font-weight:700;
+      transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+    }
+    .count.bump{transform:scale(1.4);}
+
+    main{max-width:1040px;margin:0 auto;padding:0 1.4rem 5rem;}
+
+    /* ---- hero ---- */
+    .hero{padding:3.5rem 0 2.5rem;}
+    .eyebrow{
+      font-size:.72rem;text-transform:uppercase;letter-spacing:.34em;color:var(--ink-soft);
+      opacity:0;animation:rise .7s ease forwards .05s;
+    }
+    .title{
+      font-family:"Fraunces",serif;font-weight:900;
+      font-size:clamp(3.2rem,13vw,7rem);line-height:.9;letter-spacing:-.03em;
+      margin:.6rem 0 .8rem;
+      opacity:0;animation:rise .8s ease forwards .12s;
+    }
+    .title em{font-style:italic;color:var(--accent);}
+    .tagline{
+      font-family:"Fraunces",serif;font-style:italic;font-size:1.25rem;color:var(--ink-soft);
+      max-width:34ch;
+      opacity:0;animation:rise .8s ease forwards .22s;
+    }
+
+    /* ---- section label ---- */
+    .label{
+      display:flex;align-items:center;gap:1rem;
+      font-size:.74rem;text-transform:uppercase;letter-spacing:.24em;font-weight:700;
+      margin:1.5rem 0 1.6rem;
+    }
+    .label::after{content:"";flex:1;height:1.5px;background:var(--line);}
+
+    /* ---- product grid ---- */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.4rem;list-style:none;}
+    .card{
+      background:var(--surface);
+      border:1.6px solid var(--ink);border-radius:14px;
+      overflow:hidden;
+      box-shadow:6px 6px 0 var(--ink);
+      transition:transform .18s ease,box-shadow .18s ease;
+      opacity:0;animation:rise .7s ease forwards;animation-delay:var(--delay,0s);
+    }
+    .card:hover{transform:translate(-3px,-3px);box-shadow:9px 9px 0 var(--ink);}
+    .thumb{
+      position:relative;aspect-ratio:5/4;display:grid;place-items:center;
+      border-bottom:1.6px solid var(--ink);
+      background-image:radial-gradient(rgba(34,29,21,.13) 1.5px,transparent 1.6px);
+      background-size:15px 15px;
+    }
+    .thumb--a{background-color:#ecbba6;}
+    .thumb--b{background-color:#aed2c8;}
+    .thumb--c{background-color:#f0d493;}
+    .glyph{font-size:3.4rem;line-height:1;filter:drop-shadow(2px 2px 0 rgba(34,29,21,.15));transition:transform .25s ease;}
+    .card:hover .glyph{transform:rotate(-6deg) scale(1.08);}
+    .tag{
+      position:absolute;top:.6rem;left:.7rem;
+      font-family:"Fraunces",serif;font-weight:900;font-size:1.05rem;
+      background:var(--ink);color:var(--paper);border-radius:6px;padding:.05rem .45rem;
+    }
+    .card-body{padding:1.1rem 1.1rem 1.2rem;}
+    .card-top{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;}
+    .name{font-family:"Fraunces",serif;font-weight:600;font-size:1.3rem;}
+    .price{font-weight:700;font-size:.95rem;white-space:nowrap;}
+    .add{
+      margin-top:1rem;width:100%;cursor:pointer;
+      font-family:"Space Mono",monospace;font-weight:700;font-size:.74rem;
+      text-transform:uppercase;letter-spacing:.16em;
+      background:var(--ink);color:var(--paper);
+      border:1.6px solid var(--ink);border-radius:8px;padding:.7rem;
+      transition:background .15s ease,color .15s ease;
+    }
+    .add:hover{background:var(--accent);border-color:var(--accent);}
+    .add:active{transform:translateY(1px);}
+
+    /* ---- receipt cart ---- */
+    .cart-wrap{margin-top:3rem;display:flex;justify-content:center;}
+    .receipt{
+      width:100%;max-width:420px;background:#fffdf7;color:var(--ink);
+      padding:1.6rem 1.5rem 0;
+      border:1.5px solid var(--ink);
+      box-shadow:6px 6px 0 var(--ink);
+      position:relative;
+    }
+    .receipt::after{
+      content:"";position:absolute;left:-1.5px;right:-1.5px;bottom:-14px;height:14px;
+      background:
+        linear-gradient(135deg,#fffdf7 50%,transparent 50%) 0 0/15px 15px repeat-x,
+        linear-gradient(-135deg,#fffdf7 50%,transparent 50%) 0 0/15px 15px repeat-x;
+      filter:drop-shadow(0 2px 0 var(--ink));
+    }
+    .r-head{text-align:center;border-bottom:2px dashed var(--line);padding-bottom:1rem;}
+    .r-head h2{font-family:"Fraunces",serif;font-weight:900;font-size:1.5rem;letter-spacing:.04em;}
+    .r-head p{font-size:.68rem;text-transform:uppercase;letter-spacing:.28em;color:var(--ink-soft);margin-top:.2rem;}
+    .lines{list-style:none;padding:1rem 0;min-height:2rem;}
+    .line{display:flex;align-items:center;gap:.5rem;padding:.45rem 0;font-size:.9rem;}
+    .line .ln-name{flex:1;}
+    .line .ln-name em{font-style:normal;color:var(--ink-soft);}
+    .line .ln-amt{font-weight:700;}
+    .line .rm{
+      cursor:pointer;border:1.4px solid var(--line);background:transparent;color:var(--ink);
+      width:1.5rem;height:1.5rem;border-radius:5px;line-height:1;font-weight:700;
+      display:grid;place-items:center;transition:.15s;
+    }
+    .line .rm:hover{background:var(--accent);color:var(--paper);border-color:var(--accent);}
+    .empty{text-align:center;color:var(--ink-soft);font-style:italic;padding:1.4rem 0;}
+    .total{
+      display:flex;justify-content:space-between;align-items:baseline;
+      border-top:2px dashed var(--line);padding:1rem 0 1.3rem;
+      font-size:.78rem;text-transform:uppercase;letter-spacing:.18em;font-weight:700;
+    }
+    .total .amt{font-family:"Fraunces",serif;font-size:1.7rem;letter-spacing:0;text-transform:none;color:var(--accent);}
+    .checkout{
+      display:block;width:calc(100% + 3rem);margin:0 -1.5rem;cursor:pointer;
+      font-family:"Space Mono",monospace;font-weight:700;font-size:.78rem;
+      text-transform:uppercase;letter-spacing:.2em;
+      background:var(--ink);color:var(--paper);border:none;padding:1rem;
+      transition:background .15s;
+    }
+    .checkout:hover{background:var(--accent);}
+    .checkout:disabled{opacity:.4;cursor:not-allowed;background:var(--ink);}
+
+    .toast{
+      position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%) translateY(140%);
+      background:var(--accent-2);color:#fff;padding:.8rem 1.4rem;border-radius:999px;
+      font-size:.78rem;text-transform:uppercase;letter-spacing:.16em;font-weight:700;
+      box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:200;
+      transition:transform .4s cubic-bezier(.34,1.56,.64,1);
+    }
+    .toast.show{transform:translateX(-50%) translateY(0);}
+
+    footer{
+      text-align:center;padding:2.5rem 1.4rem;
+      font-size:.7rem;text-transform:uppercase;letter-spacing:.22em;color:var(--ink-soft);
+      border-top:1.5px solid var(--line);
+    }
+
+    @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+    @media (prefers-reduced-motion:reduce){
+      *{animation:none!important;transition:none!important;}
+      .eyebrow,.title,.tagline,.card{opacity:1!important;}
+    }
+  </style>
 </head>
 <body>
-  <h1>Mini Shop</h1>
+  <div class="marquee"><span><b>FREE STICKERS WITH EVERY ORDER</b>•<b>SMALL BATCH</b>•<b>SHIPS WORLDWIDE</b>•<b>LIMITED DROP</b>•<b>FREE STICKERS WITH EVERY ORDER</b>•<b>SMALL BATCH</b>•<b>SHIPS WORLDWIDE</b>•<b>LIMITED DROP</b>•</span></div>
 
-  <h2>Products</h2>
-  <ul id="products"></ul>
+  <header class="topbar">
+    <div class="brand">Mini <em>Shop</em></div>
+    <div class="cart-pill"><span class="count" id="cartCount">0</span> items</div>
+  </header>
 
-  <h2>Cart</h2>
-  <ul id="cart"></ul>
-  <p>Total: $<span id="total">0.00</span></p>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Est. 2026 — Small batch goods</p>
+      <h1 class="title">Mini <em>Shop</em></h1>
+      <p class="tagline">Three good things, made well. Nothing more, nothing less.</p>
+    </section>
+
+    <section>
+      <div class="label">Products</div>
+      <ul id="products" class="grid"></ul>
+    </section>
+
+    <section class="cart-wrap">
+      <div class="receipt">
+        <div class="r-head">
+          <h2>Cart</h2>
+          <p>Order Receipt</p>
+        </div>
+        <ul id="cart" class="lines"></ul>
+        <div class="total"><span>Total</span><span class="amt">$<span id="total">0.00</span></span></div>
+        <button class="checkout" id="checkout" disabled>Checkout</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>Mini Shop · 2026 · Made with care</footer>
+
+  <div class="toast" id="toast">✓ Order placed — thank you!</div>
+  <div class="grain"></div>
 
   <script>
-    // 3 products
     const products = [
-      { id: 1, name: "T-Shirt", price: 19.99 },
-      { id: 2, name: "Coffee Mug", price: 9.99 },
-      { id: 3, name: "Sticker Pack", price: 4.99 }
+      { id: 1, name: "T-Shirt",      price: 19.99, thumb: "thumb--a", glyph: "👕", num: "01" },
+      { id: 2, name: "Coffee Mug",   price: 9.99,  thumb: "thumb--b", glyph: "☕", num: "02" },
+      { id: 3, name: "Sticker Pack", price: 4.99,  thumb: "thumb--c", glyph: "🌈", num: "03" }
     ];
 
-    // cart: { productId: quantity }
-    const cart = {};
+    const cart = {}; // { id: qty }
+    const money = n => "$" + n.toFixed(2);
 
     const productsEl = document.getElementById("products");
     const cartEl = document.getElementById("cart");
     const totalEl = document.getElementById("total");
+    const countEl = document.getElementById("cartCount");
+    const checkoutBtn = document.getElementById("checkout");
+    const toast = document.getElementById("toast");
 
-    // Render the product list with an "Add to cart" button each
-    products.forEach(p => {
+    // render product cards
+    products.forEach((p, i) => {
       const li = document.createElement("li");
-      li.textContent = p.name + " - $" + p.price.toFixed(2) + " ";
-      const btn = document.createElement("button");
-      btn.textContent = "Add to cart";
-      btn.addEventListener("click", () => addToCart(p.id));
-      li.appendChild(btn);
+      li.className = "card";
+      li.style.setProperty("--delay", (0.3 + i * 0.1) + "s");
+      li.innerHTML = `
+        <div class="thumb ${p.thumb}">
+          <span class="tag">${p.num}</span>
+          <span class="glyph">${p.glyph}</span>
+        </div>
+        <div class="card-body">
+          <div class="card-top">
+            <span class="name">${p.name}</span>
+            <span class="price">${money(p.price)}</span>
+          </div>
+          <button class="add" data-id="${p.id}">Add to cart</button>
+        </div>`;
       productsEl.appendChild(li);
+    });
+
+    productsEl.addEventListener("click", e => {
+      const btn = e.target.closest(".add");
+      if (btn) addToCart(Number(btn.dataset.id));
     });
 
     function addToCart(id) {
       cart[id] = (cart[id] || 0) + 1;
       renderCart();
+      countEl.classList.remove("bump");
+      void countEl.offsetWidth; // restart animation
+      countEl.classList.add("bump");
     }
 
     function removeFromCart(id) {
@@ -55,31 +304,45 @@
 
     function renderCart() {
       cartEl.innerHTML = "";
-      let total = 0;
-
+      let total = 0, count = 0;
       const ids = Object.keys(cart);
+
       if (ids.length === 0) {
-        const li = document.createElement("li");
-        li.textContent = "Cart is empty";
-        cartEl.appendChild(li);
+        cartEl.innerHTML = `<li class="empty">Your cart is empty</li>`;
       }
 
       ids.forEach(id => {
         const p = products.find(x => x.id === Number(id));
         const qty = cart[id];
         total += p.price * qty;
+        count += qty;
 
         const li = document.createElement("li");
-        li.textContent = p.name + " x " + qty + " = $" + (p.price * qty).toFixed(2) + " ";
-        const btn = document.createElement("button");
-        btn.textContent = "Remove";
-        btn.addEventListener("click", () => removeFromCart(id));
-        li.appendChild(btn);
+        li.className = "line";
+        li.innerHTML = `
+          <span class="ln-name">${p.name} <em>×${qty}</em></span>
+          <span class="ln-amt">${money(p.price * qty)}</span>
+          <button class="rm" data-id="${id}" aria-label="Remove one ${p.name}">−</button>`;
         cartEl.appendChild(li);
       });
 
       totalEl.textContent = total.toFixed(2);
+      countEl.textContent = count;
+      checkoutBtn.disabled = count === 0;
     }
+
+    cartEl.addEventListener("click", e => {
+      const btn = e.target.closest(".rm");
+      if (btn) removeFromCart(Number(btn.dataset.id));
+    });
+
+    checkoutBtn.addEventListener("click", () => {
+      if (Object.keys(cart).length === 0) return;
+      for (const k in cart) delete cart[k];
+      renderCart();
+      toast.classList.add("show");
+      setTimeout(() => toast.classList.remove("show"), 2600);
+    });
 
     renderCart();
   </script>
